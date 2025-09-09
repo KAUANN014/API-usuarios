@@ -25,7 +25,16 @@ exports.updateUserPartial = async (id, data) => {
   const user = await User.findByPk(id);
   if (!user) return null;
 
-  await user.update(data);
+  const allowedFields = ['nome', 'email', 'senha'];
+  const updateData = {};
+
+  for (const key of allowedFields) {
+    if (data[key] !== undefined) {
+      updateData[key] = data[key];
+    }
+  }
+
+  await user.update(updateData);
   return user;
 };
 
