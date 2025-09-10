@@ -6,28 +6,23 @@ const { SECRET_KEY } = require('../middlewares/auth');
 const sequelize = require('../config/database');
 
 let token;
+let createdUserIds = []; 
 
 beforeAll(() => {
     token = jwt.sign({ id: 1, email: 'admin@test.com' }, SECRET_KEY);
 });
 
 afterAll(async () => {
-  await sequelize.close();
+
+    if (createdUserIds.length > 0) {
+        await User.destroy({ where: { id: createdUserIds } });
+    }
+    await sequelize.close();
 });
 
 describe('User Controller & Routes', () => {
 
     describe('POST /users', () => {
-        let userId;
-
-        afterEach(async () => {
-            if (userId) {
-                const user = await User.findByPk(userId);
-                if (user) await user.destroy();
-                userId = null;
-            }
-        });
-
         it('deve criar usuário com sucesso', async () => {
             const res = await request(app)
                 .post('/users')
@@ -36,7 +31,17 @@ describe('User Controller & Routes', () => {
 
             expect(res.statusCode).toBe(201);
             expect(res.body).toHaveProperty('id');
-            userId = res.body.id;
+            createdUserIds.push(res.body.id);
+        });
+
+        it('deve criar usuário sem token', async () => {
+            const res = await request(app)
+                .post('/users')
+                .send({ nome: 'Teste', email: `teste2${Date.now()}@test.com`, senha: '12345678' });
+
+            expect(res.statusCode).toBe(201);
+            expect(res.body).toHaveProperty('id');
+            createdUserIds.push(res.body.id);
         });
 
         it('deve falhar ao criar usuário com email inválido', async () => {
@@ -49,38 +54,24 @@ describe('User Controller & Routes', () => {
             expect(res.body.errors[0]).toHaveProperty('param', 'email');
             expect(res.body.errors[0]).toHaveProperty('msg', 'email inválido');
         });
-
-        it('deve criar usuário sem token', async () => {
-            const res = await request(app)
-                .post('/users')
-                .send({ nome: 'Teste', email: `teste2${Date.now()}@test.com`, senha: '12345678' });
-
-            expect(res.statusCode).toBe(201);
-            expect(res.body).toHaveProperty('id');
-            expect(res.body).toHaveProperty('email');
-        });
     });
 
     describe('GET /users', () => {
         let userId;
-
         beforeEach(async () => {
             const res = await request(app)
                 .post('/users')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'ListaTeste', email: `lista${Date.now()}@test.com`, senha: '12345678' });
             userId = res.body.id;
-        });
-
-        afterEach(async () => {
-            const user = await User.findByPk(userId);
-            if (user) await user.destroy();
+            createdUserIds.push(userId);
         });
 
         it('deve retornar lista de usuários', async () => {
             const res = await request(app)
                 .get('/users')
                 .set('Authorization', `Bearer ${token}`);
+
             expect(res.statusCode).toBe(200);
             expect(Array.isArray(res.body)).toBe(true);
         });
@@ -88,24 +79,20 @@ describe('User Controller & Routes', () => {
 
     describe('GET /users/:id', () => {
         let userId;
-
         beforeEach(async () => {
             const res = await request(app)
                 .post('/users')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'GetTeste', email: `get${Date.now()}@test.com`, senha: '12345678' });
             userId = res.body.id;
-        });
-
-        afterEach(async () => {
-            const user = await User.findByPk(userId);
-            if (user) await user.destroy();
+            createdUserIds.push(userId);
         });
 
         it('deve retornar usuário pelo ID', async () => {
             const res = await request(app)
                 .get(`/users/${userId}`)
                 .set('Authorization', `Bearer ${token}`);
+
             expect(res.statusCode).toBe(200);
             expect(res.body).toHaveProperty('id', userId);
         });
@@ -114,6 +101,7 @@ describe('User Controller & Routes', () => {
             const res = await request(app)
                 .get('/users/999999')
                 .set('Authorization', `Bearer ${token}`);
+
             expect(res.statusCode).toBe(404);
             expect(res.body).toHaveProperty('error', 'Usuário não encontrado');
         });
@@ -121,18 +109,13 @@ describe('User Controller & Routes', () => {
 
     describe('PUT /users/:id', () => {
         let userId;
-
         beforeEach(async () => {
             const res = await request(app)
                 .post('/users')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'PutTeste', email: `put${Date.now()}@test.com`, senha: '12345678' });
             userId = res.body.id;
-        });
-
-        afterEach(async () => {
-            const user = await User.findByPk(userId);
-            if (user) await user.destroy();
+            createdUserIds.push(userId);
         });
 
         it('deve atualizar usuário com sucesso', async () => {
@@ -140,6 +123,7 @@ describe('User Controller & Routes', () => {
                 .put(`/users/${userId}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'Teste Atualizado', senha: '87654321' });
+
             expect(res.statusCode).toBe(200);
             expect(res.body).toHaveProperty('nome', 'Teste Atualizado');
         });
@@ -149,6 +133,7 @@ describe('User Controller & Routes', () => {
                 .put('/users/999999')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'Teste' });
+
             expect(res.statusCode).toBe(404);
             expect(res.body).toHaveProperty('error', 'Usuário não encontrado');
         });
@@ -156,18 +141,13 @@ describe('User Controller & Routes', () => {
 
     describe('PATCH /users/:id', () => {
         let userId;
-
         beforeEach(async () => {
             const res = await request(app)
                 .post('/users')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'PatchTeste', email: `patch${Date.now()}@test.com`, senha: '12345678' });
             userId = res.body.id;
-        });
-
-        afterEach(async () => {
-            const user = await User.findByPk(userId);
-            if (user) await user.destroy();
+            createdUserIds.push(userId);
         });
 
         it('deve atualizar parcialmente usuário com sucesso', async () => {
@@ -175,6 +155,7 @@ describe('User Controller & Routes', () => {
                 .patch(`/users/${userId}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({ email: `novo${Date.now()}@test.com` });
+
             expect(res.statusCode).toBe(200);
             expect(res.body).toHaveProperty('email');
         });
@@ -184,6 +165,7 @@ describe('User Controller & Routes', () => {
                 .patch('/users/999999')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'teste' });
+
             expect(res.statusCode).toBe(404);
             expect(res.body).toHaveProperty('error', 'Usuário não encontrado');
         });
@@ -191,19 +173,20 @@ describe('User Controller & Routes', () => {
 
     describe('DELETE /users/:id', () => {
         let userId;
-
         beforeEach(async () => {
             const res = await request(app)
                 .post('/users')
                 .set('Authorization', `Bearer ${token}`)
                 .send({ nome: 'DeleteTeste', email: `delete${Date.now()}@test.com`, senha: '12345678' });
             userId = res.body.id;
+            createdUserIds.push(userId);
         });
 
         it('deve deletar usuário com sucesso', async () => {
             const res = await request(app)
                 .delete(`/users/${userId}`)
                 .set('Authorization', `Bearer ${token}`);
+
             expect(res.statusCode).toBe(200);
             expect(res.body).toHaveProperty('message', 'Usuário deletado com sucesso');
         });
@@ -212,13 +195,9 @@ describe('User Controller & Routes', () => {
             const res = await request(app)
                 .delete('/users/999999')
                 .set('Authorization', `Bearer ${token}`);
+
             expect(res.statusCode).toBe(404);
             expect(res.body).toHaveProperty('error', 'Usuário não encontrado');
-        });
-
-        afterEach(async () => {
-            const user = await User.findByPk(userId);
-            if (user) await user.destroy();
         });
     });
 
