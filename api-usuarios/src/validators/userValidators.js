@@ -40,7 +40,10 @@ const validate = (req, res, next) => {
     if (errors.isEmpty()) return next();
 
     return res.status(422).json({
-        errors: errors.array().map(e => ({ param: e.param, msg: e.msg }))
+        errors: errors.array().map(e => ({
+             param: e.param || e.path,
+            msg: e.msg
+        }))
     });
 };
 
