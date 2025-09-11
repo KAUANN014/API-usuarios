@@ -36,26 +36,18 @@ config/
 swagger.json
 package.json
 
-yaml
-Copiar código
-
 ---
 
 ## Instalação
 1. Clone o repositório:
-```bash
 git clone <URL_DO_REPOSITORIO>
 cd api-usuarios
 Instale as dependências:
 
-bash
-Copiar código
 npm install
 Configure o banco de dados em config/database.js.
 
 Executando a API
-bash
-Copiar código
 npm run dev
 O servidor será iniciado em: http://localhost:3000
 
@@ -72,7 +64,7 @@ DELETE	/users/:id	Deleta um usuário	JWT
 
 Exemplo POST /users
 json
-Copiar código
+
 {
   "nome": "João",
   "email": "joao@email.com",
@@ -122,7 +114,6 @@ Autenticação - POST /auth/login
 Request Body:
 
 json
-Copiar código
 {
   "email": "joao@email.com",
   "senha": "12345678"
@@ -137,7 +128,7 @@ Testes Unitários
 Para rodar os testes:
 
 bash
-Copiar código
+
 npm test
 Cobrem:
 
@@ -153,7 +144,7 @@ Documentação
 Swagger disponível em:
 
 bash
-Copiar código
+
 http://localhost:3000/api-docs
 Observações
 Boas práticas REST: verbos, status HTTP e mensagens de erro claros.
