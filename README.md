@@ -13,6 +13,7 @@ API RESTful para gerenciar usuários, com operações CRUD (Create, Read, Update
 - express-validator
 - Jest e Supertest (testes unitários)
 - Swagger (OpenAPI)
+- Docker e Docker Compose
 
 ---
 
@@ -35,6 +36,8 @@ config/
 ├── database.js
 swagger.json
 package.json
+Dockerfile
+docker-compose.yml
 
 ---
 
@@ -44,12 +47,22 @@ git clone <URL_DO_REPOSITORIO>
 cd api-usuarios
 Instale as dependências:
 
-npm install
-Configure o banco de dados em config/database.js.
 
 Executando a API
 npm run dev
 O servidor será iniciado em: http://localhost:3000
+
+Rodando via Docker 
+Certifique-se de ter o Docker Desktop instalado e em execução, então rode:
+docker-compose up -d
+
+Isso criará dois containers:
+api-usuarios: a API Node.js
+mysql-db: banco MySQL com a base api_usuarios
+
+
+Para verificar os containers:
+docker ps
 
 Endpoints
 Usuários
